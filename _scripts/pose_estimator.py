@@ -1,19 +1,15 @@
-
-
-
-
 from _util.util_v1 import * ; import _util.util_v1 as uutil
 from _util.pytorch_v1 import * ; import _util.pytorch_v1 as utorch
 from _util.twodee_v0 import * ; import _util.twodee_v0 as u2d
 
 import _util.keypoints_v0 as ukey
+import json
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('fn_img')
-parser.add_argument('fn_model')
+parser.add_argument('--fn_model', default='./_train/character_pose_estim/runs/feat_concat+data.ckpt')
 args = parser.parse_args()
-img = I(args.fn_img)
 
 
 ######################## SEGMENTER ########################
@@ -23,6 +19,7 @@ model_segmenter = CharacterBGSegmenter.load_from_checkpoint(
     './_train/character_bg_seg/runs/eyeless_alaska_vulcan0000/checkpoints/'
     'epoch=0096-val_f1=0.9508-val_loss=0.0483.ckpt'
 )
+model_segmenter.cuda()
 
 def abbox(img, thresh=0.5, allow_empty=False):
     # get bbox from alpha image, at threshold
@@ -64,6 +61,7 @@ elif 'feat_match' in args.fn_model:
 else:
     assert 0, 'must use one of the provided pose estimation models'
 model_pose = CharacterPoseEstimator.load_from_checkpoint(args.fn_model, strict=False)
+model_pose.cuda()
 
 def infer_pose(self, segmenter, images, smoothing=0.1, pad_factor=1):
     self.eval()
@@ -126,21 +124,14 @@ def _visualize(image=None, bbox=None, keypoints=None):
             v = v.dot(kp, s=5, c='r')
     return v
 
-ans = infer_pose(model_pose, model_segmenter, [img,])
 
-bbox = ans[0]['bbox']
-print(f'bounding box\n\ttop-left: {bbox[0]}\n\tsize: {bbox[1]}')
-print()
-
-print('keypoints')
-v = img
-for k,(x,y) in zip(ukey.coco_keypoints, ans[0]['keypoints']):
-    print((f'\t({x:.2f}, {y:.2f})'), k)
-print()
-
-_visualize(img, ans[0]['bbox'], ans[0]['keypoints']).save('./_samples/character_pose_estim.png')
-print('output saved to ./_samples/character_pose_estim.png')
-
-
-
-
+if __name__ == '__main__':
+    lines = sys.stdin
+    for fname, dname in tqdm([line.strip().split() for line in lines]):
+        img = I(fname)
+        ans = infer_pose(model_pose, model_segmenter, [img,])[0]
+        bbox = ans['bbox']
+        data = {k: tuple(xy) for k, xy in zip(ukey.coco_keypoints, ans['keypoints'])}
+        data.update({'top-left': bbox[0], 'size': bbox[0]})
+        with open(dname, "w") as f:
+            json.dump(data, f)

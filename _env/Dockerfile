@@ -1,5 +1,6 @@
 
 
+#FROM pytorch/pytorch:1.8.1-cuda10.2-cudnn7-devel nvidia-driverが古かったらこっち使う
 FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
 ENV NVIDIA_DRIVER_CAPABILITIES all
 

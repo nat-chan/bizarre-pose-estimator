@@ -8,8 +8,7 @@ source ./_env/machine_config.bashrc
 if [[ $1 == shell_docker ]]; then
     ([ -z $DISPLAY ] && echo "no display" || xhost +local:docker) \
     && sudo docker run \
-        --rm \
-        --gpus=all \
+        --runtime=nvidia \
         --ipc=host \
         --net=host \
         -w $PROJECT_DN \
@@ -22,9 +21,11 @@ if [[ $1 == shell_docker ]]; then
         -v $PROJECT_DN/_env/home/.bashrc:/root/.bashrc \
         -v $PROJECT_DN/_env/home/.sensitive:/root/.sensitive \
         -v $PROJECT_DN/_env/home/.jupyter:/root/.jupyter \
+        -v /data:/data \
         $MOUNTS_DOCKER \
         -it $DOCKER_USER/$DOCKER_NAME:latest \
             /bin/bash
+#        --rm \ # いちいち重みを落としてくるのが時間かかる
 
 elif [[ $1 == jupyterlab ]]; then
     ([ -z $DISPLAY ] && echo "no display" || xhost +local:docker) \
