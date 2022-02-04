@@ -132,6 +132,6 @@ if __name__ == '__main__':
         ans = infer_pose(model_pose, model_segmenter, [img,])[0]
         bbox = ans['bbox']
         data = {k: tuple(xy) for k, xy in zip(ukey.coco_keypoints, ans['keypoints'])}
-        data.update({'top-left': bbox[0], 'size': bbox[0]})
+        data.update({'top-left': bbox[0], 'size': bbox[1]})
         with open(dname, "w") as f:
             json.dump(data, f)
