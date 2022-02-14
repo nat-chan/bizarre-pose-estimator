@@ -1,16 +1,9 @@
-
-
-
-
+import sys
+import json
+from tqdm import tqdm
 from _util.util_v1 import * ; import _util.util_v1 as uutil
 from _util.pytorch_v1 import * ; import _util.pytorch_v1 as utorch
 from _util.twodee_v0 import * ; import _util.twodee_v0 as u2d
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument('fn_img')
-args = parser.parse_args()
-
 
 from _train.danbooru_tagger.models.kate import Model as DanbooruTagger
 model = DanbooruTagger.load_from_checkpoint(
@@ -41,10 +34,16 @@ def infer(self, images, return_more=True):
         ]
     return out
 
-img = I(args.fn_img)
-ans = infer(model, [img,])
+if __name__ == '__main__':
+    lines = sys.stdin
+    for fname, dname in tqdm([line.strip().split() for line in lines]):
+        img = I(fname)
+        ans = infer(model, [img,])
+        data = {k: float(v) for k, v in ans['prob_dict'][0].items()}
+        with open(dname, "w") as f:
+            json.dump(data, f)
 
-for k,v in sorted(ans['prob_dict'][0].items(), key=lambda x: -x[1]):
-    if v>=0.5:
-        print(v,k)
-
+#for k,v in sorted(ans['prob_dict'][0].items(), key=lambda x: -x[1]):
+#    if v>=0.5:
+#        print(v,k)
+#
