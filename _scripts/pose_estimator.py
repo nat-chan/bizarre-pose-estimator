@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fn_model', default='./_train/character_pose_estim/runs/feat_concat+data.ckpt')
+parser.add_argument('--visualize', action='store_true')
 args = parser.parse_args()
 
 
@@ -131,7 +132,10 @@ if __name__ == '__main__':
         img = I(fname)
         ans = infer_pose(model_pose, model_segmenter, [img,])[0]
         bbox = ans['bbox']
-        data = {k: tuple(xy) for k, xy in zip(ukey.coco_keypoints, ans['keypoints'])}
-        data.update({'top-left': bbox[0], 'size': bbox[1]})
-        with open(dname, "w") as f:
-            json.dump(data, f)
+        if args.visualize:
+            _visualize(img, bbox, ans['keypoints']).save(dname)
+        else:
+            data = {k: tuple(xy) for k, xy in zip(ukey.coco_keypoints, ans['keypoints'])}
+            data.update({'top-left': bbox[0], 'size': bbox[1]})
+            with open(dname, "w") as f:
+                json.dump(data, f)
